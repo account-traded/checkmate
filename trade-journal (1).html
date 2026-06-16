@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens ──────────────────────────────────────────────────────────────── */
+:root {
+  --page:       #070A10;
+  --card:       #0C1018;
+  --raised:     #111827;
+  --border:     #1B2438;
+  --border-hi:  #253352;
+  --txt:        #E2E8F0;
+  --muted:      #64748B;
+  --dim:        #374151;
+  --green:      #00D97E;
+  --green-lo:   rgba(0,217,126,.08);
+  --green-mid:  rgba(0,217,126,.18);
+  --red:        #FF4560;
+  --red-lo:     rgba(255,69,96,.08);
+  --red-mid:    rgba(255,69,96,.18);
+  --blue:       #3B82F6;
+  --blue-lo:    rgba(59,130,246,.12);
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --r: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--page);
+  color: var(--txt);
+  font-family: var(--sans);
+  font-size: 14px;
+  min-height: 100vh;
+  padding: 32px 20px 80px;
+}
+.wrap { max-width: 880px; margin: 0 auto; }
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+.header h1 {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -.01em;
+}
+.header-date {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--raised);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/* ── Balance Card ───────────────────────────────────────────────────────── */
+.balance-card {
+  position: relative;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 24px 28px 20px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  transition: border-color .4s, box-shadow .4s;
+  overflow: hidden;
+}
+.balance-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  transition: opacity .4s;
+}
+.balance-card.green {
+  border-color: rgba(0,217,126,.35);
+  box-shadow: 0 0 40px rgba(0,217,126,.06), inset 0 1px 0 rgba(0,217,126,.1);
+}
+.balance-card.green::before {
+  background: radial-gradient(ellipse at 15% 50%, rgba(0,217,126,.055), transparent 55%);
+}
+.balance-card.red {
+  border-color: rgba(255,69,96,.35);
+  box-shadow: 0 0 40px rgba(255,69,96,.06), inset 0 1px 0 rgba(255,69,96,.1);
+}
+.balance-card.red::before {
+  background: radial-gradient(ellipse at 15% 50%, rgba(255,69,96,.055), transparent 55%);
+}
+
+/* left accent strip */
+.balance-card::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--border);
+  transition: background .4s, box-shadow .4s;
+}
+.balance-card.green::after {
+  background: var(--green);
+  box-shadow: 0 0 12px var(--green);
+}
+.balance-card.red::after {
+  background: var(--red);
+  box-shadow: 0 0 12px var(--red);
+}
+
+.balance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.b-col {
+  padding: 0 24px 0 0;
+  border-right: 1px solid var(--border);
+  margin-right: 24px;
+}
+.b-col:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+
+.b-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.b-num {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.b-num.green { color: var(--green); text-shadow: 0 0 24px rgba(0,217,126,.3); }
+.b-num.red   { color: var(--red);   text-shadow: 0 0 24px rgba(255,69,96,.3); }
+
+.b-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+.badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.badge.green { background: var(--green-mid); color: var(--green); }
+.badge.red   { background: var(--red-mid);   color: var(--red); }
+.badge.neu   { background: var(--raised);     color: var(--muted); border: 1px solid var(--border); }
+
+/* capital inline edit */
+.edit-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  transition: all .15s;
+}
+.edit-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.cap-edit {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cap-edit.open { display: flex; }
+.cap-edit input {
+  background: var(--page);
+  border: 1px solid var(--blue);
+  border-radius: 6px;
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 6px 10px;
+  outline: none;
+  width: 130px;
+}
+.cap-edit button {
+  background: var(--blue);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+}
+
+/* progress bar */
+.pbar-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 20px;
+  overflow: hidden;
+}
+.pbar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .5s cubic-bezier(.4,0,.2,1), background .4s;
+  width: 0%;
+}
+.pbar-fill.green { background: var(--green); box-shadow: 0 0 8px rgba(0,217,126,.5); }
+.pbar-fill.red   { background: var(--red);   box-shadow: 0 0 8px rgba(255,69,96,.5); }
+
+/* ── Stat Pills ─────────────────────────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 13px 16px;
+}
+.stat-lbl {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.stat-num {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+.stat-num.green { color: var(--green); }
+.stat-num.red   { color: var(--red); }
+
+/* ── Form ───────────────────────────────────────────────────────────────── */
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  margin-bottom: 28px;
+}
+.form-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.fg label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.fg input {
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 8px 11px;
+  outline: none;
+  transition: border .15s, box-shadow .15s;
+  width: 100%;
+  min-width: 0;
+}
+.fg input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+}
+.fg input::placeholder { color: var(--dim); }
+.f-date  { flex: 1 1 130px; }
+.f-tick  { flex: 1 1 100px; }
+.f-size  { flex: 1 1 90px; }
+.f-price { flex: 1 1 90px; }
+
+.btn-add {
+  align-self: flex-end;
+  background: var(--blue);
+  border: none;
+  border-radius: 7px;
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 22px;
+  transition: opacity .15s, transform .1s;
+  white-space: nowrap;
+}
+.btn-add:hover  { opacity: .88; }
+.btn-add:active { transform: scale(.97); }
+
+/* ── Journal ────────────────────────────────────────────────────────────── */
+.day-block { margin-bottom: 20px; }
+
+.day-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 16px;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--r) var(--r) 0 0;
+}
+.day-hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.day-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.day-label {
+  font-size: 11px;
+  color: var(--dim);
+}
+.day-badge {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+.day-badge.green { background: var(--green-lo); color: var(--green); border: 1px solid rgba(0,217,126,.2); }
+.day-badge.red   { background: var(--red-lo);   color: var(--red);   border: 1px solid rgba(255,69,96,.2); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--r) var(--r);
+  overflow: hidden;
+}
+thead th {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 9px 16px;
+  text-align: right;
+  background: rgba(255,255,255,.015);
+  border-bottom: 1px solid var(--border);
+}
+thead th:nth-child(1) { text-align: left; }
+thead th:nth-child(2) { text-align: left; }
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .12s;
+  position: relative;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,.025); }
+
+/* colored left indicator */
+tbody tr.row-win  { box-shadow: inset 3px 0 0 var(--green); }
+tbody tr.row-loss { box-shadow: inset 3px 0 0 var(--red); }
+
+tbody td {
+  padding: 10px 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+  text-align: right;
+  white-space: nowrap;
+}
+tbody td:nth-child(1) { text-align: left; }
+tbody td:nth-child(2) { text-align: left; color: var(--txt); }
+
+.ticker-cell {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .03em;
+}
+.num-muted { color: var(--muted); }
+.num-green { color: var(--green); font-weight: 700; }
+.num-red   { color: var(--red);   font-weight: 700; }
+
+.del-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 8px;
+  transition: all .15s;
+}
+.del-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-lo); }
+
+/* ── Empty ──────────────────────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 64px 20px;
+  color: var(--muted);
+}
+.empty-icon { font-size: 32px; margin-bottom: 10px; opacity: .5; }
+.empty p { font-size: 13px; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .balance-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .b-col { border-right: none; margin-right: 0; padding-right: 0; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 0; }
+  .b-col:last-child { border-bottom: none; grid-column: span 2; }
+  .b-num { font-size: 20px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .f-date, .f-tick, .f-size, .f-price { flex: 1 1 calc(50% - 5px); }
+  thead th:nth-child(3), thead th:nth-child(4), tbody td:nth-child(3), tbody td:nth-child(4) { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="dot"></div>
+    <h1>Trade Journal</h1>
+  </div>
+  <div class="header-date" id="hdr-date"></div>
+</div>
+
+<!-- Balance Card -->
+<div class="balance-card" id="balance-card">
+  <div class="balance-grid">
+
+    <div class="b-col">
+      <div class="b-label">
+        Capital
+        <button class="edit-btn" onclick="toggleCapEdit()">Edit</button>
+      </div>
+      <div class="b-num" id="b-capital">—</div>
+      <div class="b-sub" id="b-cap-sub">click Edit to set</div>
+      <div class="cap-edit" id="cap-edit">
+        <input type="number" id="cap-inp" placeholder="10000" step="100"
+               onkeydown="if(event.key==='Enter')saveCapital()">
+        <button onclick="saveCapital()">Save</button>
+      </div>
+    </div>
+
+    <div class="b-col">
+      <div class="b-label">Total P&amp;L</div>
+      <div class="b-num" id="b-pnl">$ 0.00</div>
+      <div class="b-sub" id="b-pnl-sub">all closed trades</div>
+    </div>
+
+    <div class="b-col">
+      <div class="b-label">Portfolio Value</div>
+      <div class="b-num" id="b-portfolio">—
+        <span class="badge neu" id="b-pct">—</span>
+      </div>
+      <div class="b-sub">capital + P&amp;L</div>
+    </div>
+
+  </div>
+  <div class="pbar-track">
+    <div class="pbar-fill" id="pbar"></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-lbl">Today's P&amp;L</div>
+    <div class="stat-num" id="s-today">$ 0.00</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Win Rate</div>
+    <div class="stat-num" id="s-wr">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Total Trades</div>
+    <div class="stat-num" id="s-count">0</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Avg P&amp;L / Trade</div>
+    <div class="stat-num" id="s-avg">—</div>
+  </div>
+</div>
+
+<!-- Form -->
+<div class="form-card">
+  <div class="form-title">+ New Trade</div>
+  <div class="form-row">
+    <div class="fg f-date">
+      <label>Date</label>
+      <input type="date" id="f-date">
+    </div>
+    <div class="fg f-tick">
+      <label>Ticker</label>
+      <input type="text" id="f-ticker" placeholder="MSAI" maxlength="30">
+    </div>
+    <div class="fg f-size">
+      <label>Shares</label>
+      <input type="number" id="f-size" placeholder="1000" min="1">
+    </div>
+    <div class="fg f-price">
+      <label>Entry $</label>
+      <input type="number" id="f-entry" placeholder="1.85" step="0.0001">
+    </div>
+    <div class="fg f-price">
+      <label>Exit $</label>
+      <input type="number" id="f-exit" placeholder="2.35" step="0.0001">
+    </div>
+    <button class="btn-add" onclick="addTrade()">Add Trade</button>
+  </div>
+</div>
+
+<!-- Journal -->
+<div id="journal"></div>
+
+</div><!-- /wrap -->
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────
+let trades  = JSON.parse(localStorage.getItem('tj_trades')  || '[]');
+let capital = parseFloat(localStorage.getItem('tj_capital') || '0');
+
+function persist() {
+  localStorage.setItem('tj_trades',  JSON.stringify(trades));
+  localStorage.setItem('tj_capital', capital.toString());
+}
+
+// ── Formatting ────────────────────────────────────────────────────────────
+function usd(n, plus = false) {
+  const sign = n < 0 ? '-' : (plus ? '+' : '');
+  const abs  = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return sign + '$ ' + abs;
+}
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+function fmtDate(iso) {
+  const [y,m,d] = iso.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[+m-1]} ${+d}, ${y}`;
+}
+function dayOfWeek(iso) {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return days[new Date(iso + 'T12:00:00').getDay()];
+}
+
+// ── Capital ────────────────────────────────────────────────────────────────
+function toggleCapEdit() {
+  const box = document.getElementById('cap-edit');
+  box.classList.toggle('open');
+  if (box.classList.contains('open')) {
+    const inp = document.getElementById('cap-inp');
+    inp.value = capital || '';
+    inp.focus();
+    inp.select();
+  }
+}
+function saveCapital() {
+  const v = parseFloat(document.getElementById('cap-inp').value);
+  if (!isNaN(v) && v >= 0) { capital = v; persist(); render(); }
+  document.getElementById('cap-edit').classList.remove('open');
+}
+
+// ── Add / Delete ──────────────────────────────────────────────────────────
+function addTrade() {
+  const date   = document.getElementById('f-date').value;
+  const ticker = document.getElementById('f-ticker').value.trim().toUpperCase();
+  const size   = parseFloat(document.getElementById('f-size').value);
+  const entry  = parseFloat(document.getElementById('f-entry').value);
+  const exitV  = parseFloat(document.getElementById('f-exit').value);
+
+  if (!date || !ticker || !size || !entry) {
+    const fc = document.querySelector('.form-card');
+    fc.style.outline = '1.5px solid var(--red)';
+    setTimeout(() => fc.style.outline = '', 1200);
+    return;
+  }
+
+  const pnl = isNaN(exitV) ? null : parseFloat(((exitV - entry) * size).toFixed(4));
+  trades.push({ id: Date.now(), date, ticker, size, entry, exit: isNaN(exitV) ? null : exitV, pnl });
+  persist(); render();
+
+  ['f-ticker','f-size','f-entry','f-exit'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-ticker').focus();
+}
+
+function deleteTrade(id) {
+  if (!confirm('Remove this trade?')) return;
+  trades = trades.filter(t => t.id !== id);
+  persist(); render();
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function render() {
+  updateHeader();
+  updateBalance();
+  updateStats();
+  renderJournal();
+}
+
+function updateHeader() {
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('hdr-date').textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+
+function updateBalance() {
+  const closed    = trades.filter(t => t.pnl !== null);
+  const totalPnl  = closed.reduce((s,t) => s + t.pnl, 0);
+  const portfolio = capital + totalPnl;
+  const pct       = capital > 0 ? totalPnl / capital * 100 : null;
+  const card      = document.getElementById('balance-card');
+
+  // Card glow state
+  card.className = 'balance-card ' + (totalPnl > 0 ? 'green' : totalPnl < 0 ? 'red' : '');
+
+  // Capital
+  const bCap = document.getElementById('b-capital');
+  bCap.textContent = capital > 0 ? usd(capital) : '—';
+  bCap.className = 'b-num';
+  document.getElementById('b-cap-sub').textContent = capital > 0 ? 'starting capital' : 'click Edit to set';
+
+  // P&L
+  const bPnl = document.getElementById('b-pnl');
+  bPnl.textContent = usd(totalPnl, true);
+  bPnl.className = 'b-num ' + (totalPnl > 0 ? 'green' : totalPnl < 0 ? 'red' : '');
+  document.getElementById('b-pnl-sub').textContent = `${closed.length} closed trade${closed.length !== 1 ? 's' : ''}`;
+
+  // Portfolio
+  const bPort = document.getElementById('b-portfolio');
+  const bPct  = document.getElementById('b-pct');
+  // clear and re-set text node + badge
+  bPort.childNodes[0].textContent = (capital > 0 ? usd(portfolio) : usd(totalPnl)) + ' ';
+  bPort.className = 'b-num ' + (totalPnl > 0 ? 'green' : totalPnl < 0 ? 'red' : '');
+
+  if (pct !== null) {
+    bPct.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    bPct.className = 'badge ' + (pct > 0 ? 'green' : pct < 0 ? 'red' : 'neu');
+  } else {
+    bPct.textContent = '—';
+    bPct.className = 'badge neu';
+  }
+
+  // Progress bar
+  const bar = document.getElementById('pbar');
+  if (capital > 0 && totalPnl !== 0) {
+    bar.style.width  = Math.min(Math.abs(totalPnl) / capital * 100, 100) + '%';
+    bar.className    = 'pbar-fill ' + (totalPnl >= 0 ? 'green' : 'red');
+  } else {
+    bar.style.width = '0%';
+    bar.className   = 'pbar-fill';
+  }
+}
+
+function updateStats() {
+  const closed   = trades.filter(t => t.pnl !== null);
+  const totalPnl = closed.reduce((s,t) => s + t.pnl, 0);
+  const today    = closed.filter(t => t.date === todayISO()).reduce((s,t) => s + t.pnl, 0);
+  const wins     = closed.filter(t => t.pnl > 0).length;
+  const wr       = closed.length ? Math.round(wins / closed.length * 100) : null;
+  const avg      = closed.length ? totalPnl / closed.length : null;
+
+  const setS = (id, val, n) => {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    el.className = 'stat-num' + (n > 0 ? ' green' : n < 0 ? ' red' : '');
+  };
+
+  setS('s-today', usd(today, true), today);
+  document.getElementById('s-wr').textContent = wr !== null ? wr + '%' : '—';
+  document.getElementById('s-wr').className   = 'stat-num' + (wr > 50 ? ' green' : wr !== null && wr < 50 ? ' red' : '');
+  document.getElementById('s-count').textContent = trades.length;
+  document.getElementById('s-count').className   = 'stat-num';
+  if (avg !== null) setS('s-avg', usd(avg, true), avg);
+  else { document.getElementById('s-avg').textContent = '—'; document.getElementById('s-avg').className = 'stat-num'; }
+}
+
+function renderJournal() {
+  const el = document.getElementById('journal');
+  if (!trades.length) {
+    el.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📈</div>
+        <p>No trades yet — add your first one above.</p>
+      </div>`;
+    return;
+  }
+
+  // Group by date, sorted newest first
+  const byDate = {};
+  [...trades].sort((a,b) => b.date.localeCompare(a.date)).forEach(t => {
+    (byDate[t.date] = byDate[t.date] || []).push(t);
+  });
+
+  let html = '';
+  Object.entries(byDate).forEach(([date, rows]) => {
+    const dayPnl = rows.reduce((s,t) => s + (t.pnl ?? 0), 0);
+    const cls    = dayPnl >= 0 ? 'green' : 'red';
+
+    html += `
+<div class="day-block">
+  <div class="day-hdr">
+    <div class="day-hdr-left">
+      <span class="day-num">${dayOfWeek(date)} · ${fmtDate(date)}</span>
+    </div>
+    <span class="day-badge ${cls}">${usd(dayPnl, true)}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Ticker</th>
+        <th>Shares</th>
+        <th>Entry</th>
+        <th>Exit</th>
+        <th>P&amp;L</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map(t => {
+        const rc  = t.pnl === null ? '' : t.pnl >= 0 ? 'row-win' : 'row-loss';
+        const nc  = t.pnl === null ? '' : t.pnl >= 0 ? 'num-green' : 'num-red';
+        const pct = (t.pnl !== null && t.entry > 0)
+          ? ((t.exit - t.entry) / t.entry * 100).toFixed(1) + '%'
+          : '';
+        return `<tr class="${rc}">
+          <td><span class="ticker-cell">${t.ticker}</span></td>
+          <td>${t.size.toLocaleString()}</td>
+          <td class="num-muted">$ ${t.entry.toFixed(2)}</td>
+          <td class="num-muted">${t.exit !== null ? '$ ' + t.exit.toFixed(2) : '<span style="color:var(--dim)">—</span>'}</td>
+          <td>
+            <span class="${nc}">${t.pnl !== null ? usd(t.pnl, true) : '<span style="color:var(--dim)">open</span>'}</span>
+            ${pct ? `<span style="font-size:10px;color:var(--muted);margin-left:5px">${(t.pnl>=0?'+':'')}${pct}</span>` : ''}
+          </td>
+          <td><button class="del-btn" onclick="deleteTrade(${t.id})">✕</button></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+</div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+document.getElementById('f-date').value = todayISO();
+
+// Enter key on form
+['f-entry','f-exit','f-size','f-ticker'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTrade();
+  });
+});
+
+// Auto-uppercase ticker
+document.getElementById('f-ticker').addEventListener('input', function() {
+  const s = this.selectionStart, e = this.selectionEnd;
+  this.value = this.value.toUpperCase();
+  this.setSelectionRange(s, e);
+});
+
+render();
+</script>
+</body>
+</html>
